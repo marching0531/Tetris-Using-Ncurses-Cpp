@@ -1,2 +1,2 @@
-# Tetris-Using-Ncurses-C-
+# Tetris-Using-Ncurses-Cpp
 Tetris Using Ncurses (C++)
