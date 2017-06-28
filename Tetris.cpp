@@ -2,6 +2,10 @@
 #include <time.h>
 #include <sys/time.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <cstdlib>
+#include <menu.h>
+
 #include "Pane.h"
 #include "InfoPane.h"
 #include "HelpPane.h"
@@ -11,8 +15,10 @@
 #include "Tetris.h"
 #include "Block.h"
 
+using namespace std;
+
 static int virtualArray[20][20];
-int lines;
+int lines, speed = 800000000;
 int counts[7];
 bool moveDown = false;
 
@@ -42,11 +48,26 @@ void Tetris::play(){
 
     int input = 0;
     updateScreen();
-		curs_set(0);
-		noecho();
-		keypad(stdscr, TRUE);
+    curs_set(0);
+    noecho();
+    keypad(stdscr, TRUE);
+    halfdelay(10);
 
-		bool isPlay = true;
+    timer_t gameTimer;
+    struct sigevent sigev;
+    sigev.sigev_notify = SIGEV_SIGNAL;
+    sigev.sigev_signo = SIGALRM;
+    timer_create(CLOCK_REALTIME, &sigev, &gameTimer);
+    signal(SIGALRM, alarmFunc);
+    struct itimerspec currentSpec;
+    struct itimerspec oldSpec;
+    currentSpec.it_interval.tv_sec = 0;
+    currentSpec.it_interval.tv_nsec = speed;
+    currentSpec.it_value.tv_nsec = 0;
+    currentSpec.it_value.tv_nsec = speed;
+    timer_settime(gameTimer, 0, &currentSpec, &oldSpec);
+
+    bool isPlay = true;
 
 		while(isPlay) {
 
@@ -65,7 +86,7 @@ void Tetris::play(){
     counts[blockNum-1]++;
     statPane_->printCounts(counts);
     bool isAlive = true;
-    int lines=0;
+    lines= 0;
     infoPane_->printLines(lines);
 		Block* currentBlock = new Block(boardPane_->win_, blockNum, 1,7);
 		currentBlock -> sendVA(virtualArray);
@@ -111,7 +132,7 @@ void Tetris::play(){
                     } else {
                         y++;
                     }
-		    moveDown = false;
+		    moveDown = true;
       } else if (input == ' ') {
 		    while (currentBlock->down(boardPane_->win_, y, x))
 		        y++;
@@ -199,4 +220,9 @@ void Tetris::reDraw(WINDOW* win_){
           wrefresh(win_);
       }
   }
+}
+
+void Tetris::alarmFunc(int signal){
+	
+	moveDown = true;
 }
